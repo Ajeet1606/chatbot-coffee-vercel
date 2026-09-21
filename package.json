@@ -22,7 +22,7 @@
     "dotenv": "^16.3.1",
     "import-in-the-middle": "^1.13.0",
     "langchain": "^0.3.19",
-    "monocle2ai": ">=0.3.0",
+    "monocle2ai": "https://okahu.jfrog.io/artifactory/okahu-npm-dev-local/monocle2ai/-/monocle2ai-0.4.1-tracereturn.0.tgz",
     "next": "^15.1.7",
     "next-intl": "^3.26.0",
     "openai": "^4.84.0",
