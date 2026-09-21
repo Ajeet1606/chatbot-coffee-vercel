@@ -4,6 +4,12 @@ import '@/styles/global.css';
 import CommonLayout from './commonLayout';
 import { ChatMessages, ChatInput } from '@/components/chatComponents';
 import { useSession } from '@/hooks/sessionHook';
+import {
+  TRACE_RETURN_REQUEST_HEADER,
+  logTrace,
+  readResponseWithTrace,
+  traceRetrievalKey,
+} from '@/libs/traceReturn';
 
 interface ChatResponse {
   message: any;
@@ -32,16 +38,27 @@ function App() {
   const sendMessage = async (message: string) => {
     try {
       console.log('Sending message:', process.env.REACT_APP_RESTAPI_ENDPOINT);
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'X-Session-Id': sessionId
+      };
+      // Presence of this header is what asks Monocle for the trace; its value is
+      // what the server's gate checks. Without it the response is unchanged.
+      if (traceRetrievalKey) {
+        headers[TRACE_RETURN_REQUEST_HEADER] = traceRetrievalKey;
+      }
       const response = await fetch(`/api/coffeechat`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Session-Id': sessionId
-        },
+        headers,
         body: JSON.stringify({message})
       });
-      const data = await response.json();
+      // Not response.json(): when a trace is returned the body carries a trailer
+      // after the JSON, so it has to be split before parsing.
+      const { data, spans } = await readResponseWithTrace(response);
       console.log('Response:', data);
+      if (spans) {
+        logTrace(spans);
+      }
       return data;
     } catch (error) {
       console.error('Error', error);
